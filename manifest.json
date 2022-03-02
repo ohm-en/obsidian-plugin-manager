@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-sample-plugin",
+	"name": "Untitled Plugin",
+	"version": "0.0.1",
+	"minAppVersion": "0.13.14",
+	"description": "",
+	"author": "ohm-en",
+	"authorUrl": "https://github.com/ohm-en",
+	"isDesktopOnly": false
+}
