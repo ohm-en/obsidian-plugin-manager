@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-sample-plugin",
-	"name": "Untitled Plugin",
-	"version": "0.0.1",
+	"id": "obsidian-plugin-manager",
+	"name": "Obsidian Plugin Manager",
+	"version": "0.1",
 	"minAppVersion": "0.13.14",
-	"description": "",
+	"description": "Better plugin management.",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
