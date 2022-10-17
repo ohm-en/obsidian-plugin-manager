@@ -1,0 +1,401 @@
+:PROPERTIES:
+:ID:       565cc737-ce08-43bb-be8e-58416208951e
+:END:
+#+title: Obsidian - Plugin Manager
+#+auto_tangle: t
+
+
+
+* Description
+This is a plugin which manages plugins for [Obsidian.md](https://obsidian.md/).
+
+
+** Installation
+
+** Usage
+
+* The Program
+** Imports
+:PROPERTIES:
+:header-args: :noweb-ref imports
+:END:
+
+The Obsidian import doesn't contain any actual code; however, I will still import it into the project as a gesture of understanding.
+  #+begin_src javascript
+import { Plugin, App, PluginSettingTab, Setting, SettingTab } from 'obsidian';
+  #+end_src
+
+My build is currently not being compiled, so these imports are deadcode.
+- First-party:
+  #+begin_src javascript
+//import { constructor as utility } from './utility';
+//import { constructor as settingHandle } from './settingHandle';
+  #+end_src
+
+** Load/Save State
+Using the Obsidian API, we load data saved from previous sessions, which allows a form of savestates.
+
+Additionally, since we don't know the previous state, we must provide a default set of our data in the case the previous state was deleted or never existed.
+
+#+NAME: load-settings
+#+begin_src js
+const DEFAULT_SETTINGS = {
+	pluginArr: function() {
+	  let array = {}
+	  Object.keys(app.plugins.manifests).forEach(
+		function(pluginID) {
+			array[pluginID] = { delay: "0" }
+		})
+	  return array
+	}(),
+}
+
+const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+const { pluginArr } = pluginSettings;
+#+end_src
+*** Register Commands
+#+begin_src javascript
+settings.addCommands({ plugin, commands });
+#+end_src
+** Lazy Load Plugins
+The original purpose of this plugin was to implement an easier variation of TftHacker's lazy-loading.
+
+Using a saved listed of plugins and their relevant on load delay, this is trivially achieved.
+
+Notably the `app.plugins.enablePlugin` function does *not* cause the plugin to be enabled upon restart; therefore, I have no need to create any hooks on shutdown. (In order to for a plugin to stay enabled use `app.plugins.enablePluginAndSave`.)
+
+#+NAME: lazy-load
+#+begin_src js
+Object.entries(pluginArr).forEach(
+    function([id, data]) {
+        if (data.delay > 0) {
+            setTimeout(
+                function() {
+                    app.plugins.enablePlugin([id])
+                }, data.delay)
+        }
+    }
+);
+#+end_src
+** Quick Toggle for Plugins
+Based on the list of installed plugins, this code creates an array of `command` objects, which when activated, toggles the relevant plugin. If desired, the user can add a keybinding using the GUI.
+
+The `command` object is specified by the Obsidian API and contains an `id` (save name for reference), `name` (unsafe name for viewing), and a callback function.
+
+#+NAME: toggle-commands
+#+begin_src js :noweb yes
+<<plugin-status>>
+
+const commands = Object.entries(pluginArr).map(
+    function([id, data]) {
+        return { id: id,
+                 name: `Toggle ${app.plugins.manifests[id]["name"]}`,
+                 callback:
+                    <<command-callback>>
+        }
+    }
+)
+commands.forEach(
+    function(command) {
+        plugin.addCommand(command);
+    })
+
+
+#+end_src
+
+The callback function toggles the plugin between enabled & disabled depending on its current state.
+
+#+NAME: command-callback
+#+begin_src js
+function() {
+    const isEnabled = getPluginStatus( { pluginID: id } )
+    if (isEnabled) {
+        app.plugins.disablePlugin(id)
+    } else {
+        app.plugins.enablePlugin(id)
+    }
+}
+#+end_src
+
+
+#+begin_src js
+const togglePlugin = function({object, value}) {
+	const { id } = object;
+	if (value === true) {
+		app.plugins.enablePluginAndSave(id);
+	} else if (value === false) {
+		app.plugins.disablePluginAndSave(id);
+	}
+}
+#+end_src
+
+** TODO Refresh Plugin
+** Helper Functions
+
+#+begin_src js
+export function constructor(spec) {
+	const { app } = global;
+	// Loads all plugins set to lazy based on a delay.
+	return Object.freeze({
+		getPluginStatus,
+		loadLazy
+	});
+}
+#+end_src
+
+*** Callbacks
+#+begin_src js
+export function constructor(spec) {
+	const { plugin, pluginSettings } = spec;
+	const { app } = plugin;
+	}
+	const textHandler = function(spec) {
+		const { object, value } = spec;
+		object["delay"] = value;
+		plugin.saveData(pluginSettings);
+	}
+	return Object.freeze ({
+		togglePlugin,
+		loadTySetter,
+		textHandler
+	});
+}
+#+end_src
+*** Get Plugin Status
+#+NAME: plugin-status
+#+begin_src js
+const getPluginStatus = function({ pluginID }) {
+	const isEnabled = app.plugins.getPlugin(pluginID);
+	if (isEnabled === null) {
+			return false;
+	}
+	return true;
+}
+#+end_src
+
+*** Get List of Installed Plugins
+#+begin_src js
+const getPluginData = function(key) {
+	const arr = app.plugins.manifests;
+	return Object.keys(arr).map(
+		function(item) {
+			return arr[item][key]
+		}
+	)
+}
+#+end_src
+
+** Obsidian API Overhead
+To utilize the Obsidian API, we must extend the `Plugin` object. This object contains most the methods for interacting with the API.
+
+To do so, it's normally done with a class using the `extent` keyword to the Plugin class (`class MyPlugin extends Plugin`), but I've chosen to use a simple function which returns the a plugin object as classes are annoying to work with.
+
+Furthermore, code put within the `plugin.onload` function will be our entry point.
+
+#+NAME: entry-point
+#+begin_src javascript :noweb yes
+function constructor(app, manifest) {
+	const plugin = new obsidian.Plugin(app, manifest)
+
+        plugin.onload = async function() {
+		  <<load-settings>>
+            <<entry-code>>
+        }
+	return plugin;
+}
+#+end_src
+*** Register Settings Panel
+The settings panel is a list of every installed plugin with a few options. The following loops between each plugin and adds it to the settings panel.
+
+#+NAME: settings-tab
+#+begin_src js
+const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
+
+MySettingTab.display = function() {
+	const { containerEl: El } = MySettingTab;
+	El.empty();
+	Object.entries(pluginArr).forEach(
+		function([id, data], index, arr) {
+			const st = new obsidian.Setting(El)
+			const manifest = app.plugins.manifests[id]
+			st.setName(manifest.name)
+			st.setDesc(manifest.description)
+			st.addToggle(
+				function(tg) {
+					tg.setValue(getPluginStatus({ pluginID: id }))
+					tg.onChange(
+						function(value) {
+							if (value) {
+							  app.plugins.enablePluginAndSave(id);
+							} else {
+							  app.plugins.disablePluginAndSave(id);
+							}
+						})
+				})
+			st.addText(
+				function(tx) {
+					tx.inputEl.type = "number"
+					tx.setValue(data.delay)
+					tx.onChange(
+						async function(value) {
+						pluginArr[id]["delay"] = value
+						await plugin.saveData(pluginSettings)
+						if ( value === 0 ) {
+							app.plugins.enablePluginAndSave(id);
+						} else {
+							// TODO: Plugin doesn't need to be disbaled & reenabled every time the value is changed;
+							app.plugins.disablePluginAndSave(id);
+							app.plugins.enablePlugin(id);
+						}
+						})
+				})
+		}
+	)
+}
+
+plugin.addSettingTab(MySettingTab);
+#+end_src
+
+
+
+Now we can register the settings panel.
+
+#+begin_src js
+
+#+end_src
+
+
+#+begin_src js
+	// Applies changes needed when changing load typpes;
+	// Currently only supports `lazy` and `normal` loading;
+	const setlazyLoad = function({object, value}) {
+		const { id } = object;
+				// TODO: Check if only enable will suffice;
+				//app.plugins.disablePluginAndSave(id);
+				app.plugins.enablePlugin(id);
+			} else if ( value == 0 ) {
+				app.plugins.enablePluginAndSave(id);
+			}
+
+		}
+
+#+end_src
+
+* Compilation
+** Org-Babel-Tangle
+#+NAME: entry-code
+#+begin_src js :noweb yes
+<<lazy-load>>
+<<toggle-commands>>
+<<settings-tab>>
+#+end_src
+
+#+begin_src js :noweb yes :tangle .obsidian/plugins/src/main.js
+'use strict';
+
+var obsidian = require('obsidian');
+
+<<entry-point>>
+module.exports = constructor;
+#+end_src
+**
+** ESLint
+** Dependencies
+
+#+NAME package.json
+#+begin_src json :tangle ./package.json
+{
+	"name": "obsidian-sample-plugin",
+	"version": "0.0.1",
+	"description": "",
+	"main": "main.js",
+	"scripts": {
+		"dev": "npx rollup --config rollup.config.js -w",
+		"build": "npx rollup --config rollup.config.js --environment BUILD:production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
+	},
+	"keywords": [],
+	"author": "ohm-en",
+	"license": "MIT",
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "^21.0.1",
+		"@rollup/plugin-eslint": "^8.0.1",
+		"@rollup/plugin-node-resolve": "^13.1.3",
+		"@rollup/plugin-typescript": "^8.3.0",
+		"@types/node": "^16.11.6",
+		"@typescript-eslint/eslint-plugin": "^5.2.0",
+		"@typescript-eslint/parser": "^5.2.0",
+		"builtin-modules": "^3.2.0",
+		"eslint": "^8.25.0",
+		"eslint-config-google": "^0.14.0",
+		"obsidian": "^0.12.17",
+		"rollup": "^2.66.1",
+		"rollup-plugin-copy": "^3.4.0",
+		"tslib": "2.3.1",
+		"typescript": "4.4.4"
+	}
+}
+#+end_src
+
+** Manifest
+#+begin_src json
+{
+	"id": "obsidian-plugin-manager",
+	"name": "Obsidian Plugin Manager",
+	"version": "0.1",
+	"minAppVersion": "0.13.14",
+	"description": "Better plugin management.",
+	"author": "ohm-en",
+	"authorUrl": "https://github.com/ohm-en",
+	"isDesktopOnly": false
+}
+
+#+end_src
+* Scripts
+
+** Bump Version
+#+begin_src js
+import { readFileSync, writeFileSync } from "fs";
+
+const targetVersion = process.env.npm_package_version;
+
+// read minAppVersion from manifest.json and bump version to target version
+let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
+const { minAppVersion } = manifest;
+manifest.version = targetVersion;
+writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
+
+// update versions.json with target version and minAppVersion from manifest.json
+let versions = JSON.parse(readFileSync("versions.json", "utf8"));
+versions[targetVersion] = minAppVersion;
+writeFileSync("versions.json", JSON.stringify(versions, null, "\t"));
+#+end_src
+
+* Credits
+
+TFTHACKER
+
+* LICENSE
+#+begin_src text :tangle ./LICENSE
+MIT License
+
+Copyright (c) 2022 ohm-en
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+#+end_src
