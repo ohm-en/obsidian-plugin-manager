@@ -156,13 +156,14 @@ const togglePlugin = function(id, state, settings) {
 }
 #+end_src
 ** Register Settings Panel
+:PROPERTIES:
+:header-args: :noweb-ref settings-tab
+:END:
+
 The settings panel is a list of every installed plugin with a few options. The following loops between each plugin and adds it to the settings panel.
 
-#+NAME: settings-tab
 #+begin_src js
 const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-
-
 MySettingTab.display = function() {
 	const { containerEl: El } = MySettingTab;
 	El.empty();
@@ -202,32 +203,12 @@ MySettingTab.display = function() {
 		}
 	)
 }
+#+end_src
+
+Now that we've created the settings panel we need to register it with the `addSettingTab` API function.
+
+#+begin_src js
 plugin.addSettingTab(MySettingTab);
-#+end_src
-
-
-
-Now we can register the settings panel.
-
-#+begin_src js
-
-#+end_src
-
-
-#+begin_src js
-	// Applies changes needed when changing load typpes;
-	// Currently only supports `lazy` and `normal` loading;
-	const setlazyLoad = function({object, value}) {
-		const { id } = object;
-				// TODO: Check if only enable will suffice;
-				//app.plugins.disablePluginAndSave(id);
-				app.plugins.enablePlugin(id);
-			} else if ( value == 0 ) {
-				app.plugins.enablePluginAndSave(id);
-			}
-
-		}
-
 #+end_src
 
 ** Obsidian Overhead

@@ -49,8 +49,6 @@ function constructor(app, manifest) {
         
         
         const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-        
-        
         MySettingTab.display = function() {
         	const { containerEl: El } = MySettingTab;
         	El.empty();
