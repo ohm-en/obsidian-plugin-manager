@@ -54,8 +54,8 @@ const DEFAULT_SETTINGS = {
 	pluginArr: function() {
 	  let array = {}
 	  Object.keys(app.plugins.manifests).forEach(
-		function(pluginID) {
-			array[pluginID] = { delay: "0" }
+		function(pluginId) {
+			array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
 		})
 	  return array
 	}(),
@@ -75,7 +75,7 @@ Notably the `app.plugins.enablePlugin` function does *not* cause the plugin to b
 #+begin_src js
 Object.entries(pluginArr).forEach(
     function([id, data]) {
-        if (data.delay > 0) {
+        if (data.enabled & data.delay > 0) {
             setTimeout(
                 function() {
                     app.plugins.enablePlugin([id])
@@ -124,12 +124,13 @@ function() {
 :PROPERTIES:
 :header-args: :noweb-ref helper-functions
 :END:
-*** Get Plugin Status
+*** Check If Plugin Is Enabled
 #+begin_src js
 const pluginStatus = function(pluginId) {
 	return app.plugins.plugins.hasOwnProperty(pluginId);
 }
 #+end_src
+
 *** Get List of Installed Plugins
 #+begin_src js
 const getPluginData = function(key) {
@@ -143,15 +144,19 @@ const getPluginData = function(key) {
 #+end_src
 *** Toggle Plugin
 #+begin_src js
-const togglePlugin = function(id, state, settings) {
+const togglePlugin = async function(id, state) {
 	if (state) {
-		if (settings.delay > 0) {
+		if (pluginArr[id].delay > 0) {
 			app.plugins.enablePlugin(id);
 		} else {
 			app.plugins.enablePluginAndSave(id);
 		}
+		pluginArr[id].enabled = true;
+		await plugin.saveData(pluginSettings);
 	} else {
 		app.plugins.disablePluginAndSave(id);
+		pluginArr[id].enabled = false;
+		await plugin.saveData(pluginSettings);
 	}
 }
 #+end_src
@@ -179,6 +184,7 @@ MySettingTab.display = function() {
 					tg.onChange(
 						function(value) {
 							togglePlugin(id, value, pluginArr[id])
+							console.log(pluginArr)
 						})
 				})
 			st.addText(
@@ -223,13 +229,13 @@ Furthermore, code put within the `plugin.onload` function will be our entry poin
 function constructor(app, manifest) {
 	const plugin = new obsidian.Plugin(app, manifest)
     plugin.onload = async function() {
+		<<helper-functions>>
         <<load-settings>>
         <<lazy-load>>
         <<toggle-commands>>
         <<settings-tab>>
     }
 	return plugin; }
-<<helper-functions>>
 #+end_src
 * Environment & Compilation
 ** Compile With Org-Babel-Tangle
@@ -244,7 +250,6 @@ module.exports = constructor;
 ** ESLint
 ** Dependencies
 
-#+NAME package.json
 #+begin_src json :tangle ./package.json
 {
 	"name": "obsidian-sample-plugin",

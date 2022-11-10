@@ -5,12 +5,38 @@ var obsidian = require('obsidian');
 function constructor(app, manifest) {
 	const plugin = new obsidian.Plugin(app, manifest)
     plugin.onload = async function() {
+		const pluginStatus = function(pluginId) {
+			return app.plugins.plugins.hasOwnProperty(pluginId);
+		}
+		const getPluginData = function(key) {
+			const arr = app.plugins.manifests;
+			return Object.keys(arr).map(
+				function(item) {
+					return arr[item][key]
+				}
+			)
+		}
+		const togglePlugin = async function(id, state) {
+			if (state) {
+				if (pluginArr[id].delay > 0) {
+					app.plugins.enablePlugin(id);
+				} else {
+					app.plugins.enablePluginAndSave(id);
+				}
+				pluginArr[id].enabled = true;
+				await plugin.saveData(pluginSettings);
+			} else {
+				app.plugins.disablePluginAndSave(id);
+				pluginArr[id].enabled = false;
+				await plugin.saveData(pluginSettings);
+			}
+		}
         const DEFAULT_SETTINGS = {
         	pluginArr: function() {
         	  let array = {}
         	  Object.keys(app.plugins.manifests).forEach(
-        		function(pluginID) {
-        			array[pluginID] = { delay: "0" }
+        		function(pluginId) {
+        			array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
         		})
         	  return array
         	}(),
@@ -20,7 +46,7 @@ function constructor(app, manifest) {
         const { pluginArr } = pluginSettings;
         Object.entries(pluginArr).forEach(
             function([id, data]) {
-                if (data.delay > 0) {
+                if (data.enabled & data.delay > 0) {
                     setTimeout(
                         function() {
                             app.plugins.enablePlugin([id])
@@ -64,6 +90,7 @@ function constructor(app, manifest) {
         					tg.onChange(
         						function(value) {
         							togglePlugin(id, value, pluginArr[id])
+        							console.log(pluginArr)
         						})
         				})
         			st.addText(
@@ -91,26 +118,4 @@ function constructor(app, manifest) {
         plugin.addSettingTab(MySettingTab);
     }
 	return plugin; }
-const pluginStatus = function(pluginId) {
-	return app.plugins.plugins.hasOwnProperty(pluginId);
-}
-const getPluginData = function(key) {
-	const arr = app.plugins.manifests;
-	return Object.keys(arr).map(
-		function(item) {
-			return arr[item][key]
-		}
-	)
-}
-const togglePlugin = function(id, state, settings) {
-	if (state) {
-		if (settings.delay > 0) {
-			app.plugins.enablePlugin(id);
-		} else {
-			app.plugins.enablePluginAndSave(id);
-		}
-	} else {
-		app.plugins.disablePluginAndSave(id);
-	}
-}
 module.exports = constructor;
