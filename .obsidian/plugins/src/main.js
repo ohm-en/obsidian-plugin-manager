@@ -31,18 +31,19 @@ function constructor(app, manifest) {
 				await plugin.saveData(pluginSettings);
 			}
 		}
-        const DEFAULT_SETTINGS = {
-        	pluginArr: function() {
-        	  let array = {}
-        	  Object.keys(app.plugins.manifests).forEach(
-        		function(pluginId) {
-        			array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
-        		})
-        	  return array
-        	}(),
-        }
         
+        const DEFAULT_SETTINGS = {
+            pluginArr: function() {
+                let array = {}
+                Object.keys(app.plugins.manifests).forEach(
+                    function(pluginId) {
+                        array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
+                    })
+                return array
+                }(),
+        }
         const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+        
         const { pluginArr } = pluginSettings;
         Object.entries(pluginArr).forEach(
             function([id, data]) {
@@ -56,10 +57,10 @@ function constructor(app, manifest) {
         );
         
         
-        const commands = Object.entries(pluginArr).map(
+        const commands = Object.entries(app.plugins.manifests).map(
             function([id, data]) {
                 return { id: id,
-                         name: `Toggle ${app.plugins.manifests[id]["name"]}`,
+                         name: `Toggle ${data.name}`,
                          callback:
                             function() {
                             	const desiredState = ! app.plugins.plugins.hasOwnProperty(id);
@@ -75,11 +76,15 @@ function constructor(app, manifest) {
         
         
         const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-        MySettingTab.display = function() {
+        MySettingTab.display = async function() {
         	const { containerEl: El } = MySettingTab;
         	El.empty();
-        	Object.entries(pluginArr).forEach(
-        		function([id, data], index, arr) {
+        	Object.entries(app.plugins.manifests).forEach(
+        		function([id, pluginData], index, arr) {
+        			if (! pluginArr[id]) {
+        				pluginArr[id] = { delay: "0", enabled: pluginStatus(id) }
+        			}
+        			const data = pluginArr[id];
         			const st = new obsidian.Setting(El)
         			const manifest = app.plugins.manifests[id]
         			st.setName(manifest.name)
@@ -90,7 +95,6 @@ function constructor(app, manifest) {
         					tg.onChange(
         						function(value) {
         							togglePlugin(id, value, pluginArr[id])
-        							console.log(pluginArr)
         						})
         				})
         			st.addText(

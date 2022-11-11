@@ -50,18 +50,19 @@ Additionally, for new sessions we must provide a default set of our data in the 
 
 #+NAME: load-settings
 #+begin_src js
-const DEFAULT_SETTINGS = {
-	pluginArr: function() {
-	  let array = {}
-	  Object.keys(app.plugins.manifests).forEach(
-		function(pluginId) {
-			array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
-		})
-	  return array
-	}(),
-}
 
+const DEFAULT_SETTINGS = {
+    pluginArr: function() {
+        let array = {}
+        Object.keys(app.plugins.manifests).forEach(
+            function(pluginId) {
+                array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
+            })
+        return array
+        }(),
+}
 const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+
 const { pluginArr } = pluginSettings;
 #+end_src
 ** Lazy Load Plugins
@@ -93,10 +94,10 @@ The `command` object is specified by the Obsidian API and contains an `id` (save
 #+begin_src js :noweb yes
 <<plugin-status>>
 
-const commands = Object.entries(pluginArr).map(
+const commands = Object.entries(app.plugins.manifests).map(
     function([id, data]) {
         return { id: id,
-                 name: `Toggle ${app.plugins.manifests[id]["name"]}`,
+                 name: `Toggle ${data.name}`,
                  callback:
                     <<command-callback>>
         }
@@ -169,11 +170,15 @@ The settings panel is a list of every installed plugin with a few options. The f
 
 #+begin_src js
 const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-MySettingTab.display = function() {
+MySettingTab.display = async function() {
 	const { containerEl: El } = MySettingTab;
 	El.empty();
-	Object.entries(pluginArr).forEach(
-		function([id, data], index, arr) {
+	Object.entries(app.plugins.manifests).forEach(
+		function([id, pluginData], index, arr) {
+			if (! pluginArr[id]) {
+				pluginArr[id] = { delay: "0", enabled: pluginStatus(id) }
+			}
+			const data = pluginArr[id];
 			const st = new obsidian.Setting(El)
 			const manifest = app.plugins.manifests[id]
 			st.setName(manifest.name)
@@ -184,7 +189,6 @@ MySettingTab.display = function() {
 					tg.onChange(
 						function(value) {
 							togglePlugin(id, value, pluginArr[id])
-							console.log(pluginArr)
 						})
 				})
 			st.addText(
