@@ -19,6 +19,7 @@
   - [[#eslint][ESLint]]
   - [[#dependencies][Dependencies]]
   - [[#manifest][Manifest]]
+  - [[#brat-manifest][BRAT Manifest]]
 - [[#scripts][Scripts]]
   - [[#bump-version][Bump Version]]
 - [[#credits][Credits]]
@@ -243,7 +244,7 @@ function constructor(app, manifest) {
 #+end_src
 * Environment & Compilation
 ** Compile With Org-Babel-Tangle
-#+begin_src js :noweb yes :tangle .obsidian/plugins/src/main.js
+#+begin_src js :noweb yes :tangle main.js
 'use strict';
 
 var obsidian = require('obsidian');
@@ -279,7 +280,7 @@ module.exports = constructor;
 #+end_src
 
 ** Manifest
-#+begin_src json :tangle .obsidian/plugins/src/manifest.json
+#+begin_src json :tangle manifest.json
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
@@ -292,6 +293,23 @@ module.exports = constructor;
 }
 
 #+end_src
+
+** BRAT Manifest
+A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]] proper support. Expect for the version number It's the same as the normal manifest.
+
+#+begin_src json :tangle ./manifest-beta.json
+{
+	"id": "obsidian-plugin-manager",
+	"name": "Obsidian Plugin Manager",
+	"version": "0.1",
+	"minAppVersion": "0.13.14",
+	"description": "Better plugin management.",
+	"author": "ohm-en",
+	"authorUrl": "https://github.com/ohm-en",
+	"isDesktopOnly": false
+}
+#+end_src
+
 * Scripts
 ** Bump Version
 #+begin_src js
