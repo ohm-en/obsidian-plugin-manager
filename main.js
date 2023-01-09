@@ -5,46 +5,47 @@ var obsidian = require('obsidian');
 function constructor(app, manifest) {
 	const plugin = new obsidian.Plugin(app, manifest)
     plugin.onload = async function() {
-		const pluginStatus = function(pluginId) {
-			return app.plugins.plugins.hasOwnProperty(pluginId);
-		}
-		const getPluginData = function(key) {
-			const arr = app.plugins.manifests;
-			return Object.keys(arr).map(
-				function(item) {
-					return arr[item][key]
-				}
-			)
-		}
-		const togglePlugin = async function(id, state) {
-			if (state) {
-				if (pluginArr[id].delay > 0) {
-					app.plugins.enablePlugin(id);
-				} else {
-					app.plugins.enablePluginAndSave(id);
-				}
-				pluginArr[id].enabled = true;
-				await plugin.saveData(pluginSettings);
-			} else {
-				app.plugins.disablePluginAndSave(id);
-				pluginArr[id].enabled = false;
-				await plugin.saveData(pluginSettings);
-			}
-		}
-        
+        const pluginStatus = function(pluginId) {
+        	return app.plugins.plugins.hasOwnProperty(pluginId);
+        }
         const DEFAULT_SETTINGS = {
             pluginArr: function() {
                 let array = {}
                 Object.keys(app.plugins.manifests).forEach(
                     function(pluginId) {
-                        array[pluginId] = { delay: "0", enabled: pluginStatus(pluginId) }
+                        array[pluginId] = { id: pluginId, delay: 0, enabled: pluginStatus(pluginId) }
                     })
                 return array
                 }(),
         }
         const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+        const pluginListen = {
+        	async set(obj, prop, value) {
+        	    const nbj = Object.assign({}, obj); nbj[prop] = value;
+        	    const { id } = obj;
+        	  	if (nbj.enabled) {
+        			// If lazy loading disabled
+        			if (nbj.delay == 0) { app.plugins.enablePluginAndSave(id); }
+        			// If lazy loading newly enabled
+        			else if (obj.delay == 0) { app.plugins.disablePluginAndSave(id); app.plugins.enablePlugin(id) }
+        			// If lazy loading already enabled
+        			else { app.plugins.enablePlugin(id) }
+        		}
+        		else {
+        			app.plugins.disablePluginAndSave(id)
+        		 }
+        	    Reflect.set(...arguments)
+        		await plugin.saveData(pluginSettings);
+        	    return true
+        	}
+        }
         
-        const { pluginArr } = pluginSettings;
+        const pluginArr = {};
+        Object.entries(pluginSettings.pluginArr)
+            .forEach(
+                function([id, pluginObj]) {
+                    pluginArr[id] = new Proxy(pluginObj, pluginListen);
+                })
         Object.entries(pluginArr).forEach(
             function([id, data]) {
                 if (data.enabled & data.delay > 0) {
@@ -55,26 +56,19 @@ function constructor(app, manifest) {
                 }
             }
         );
-        
-        
-        const commands = Object.entries(app.plugins.manifests).map(
-            function([id, data]) {
-                return { id: id,
-                         name: `Toggle ${data.name}`,
-                         callback:
-                            function() {
-                            	const desiredState = ! app.plugins.plugins.hasOwnProperty(id);
-                            	togglePlugin(id, desiredState, pluginArr[id]);
-                            }
-                }
+        const createToggleCommand = function({id, name}) {
+            const obj = {id: `toggle-${id}`,
+                        name: `toggle ${name}`,
+                        callback: function() {
+                                    pluginArr[id].enabled = !pluginArr[id].enabled
+                                }
             }
-        )
-        commands.forEach(
-            function(command) {
-                plugin.addCommand(command);
-            })
-        
-        
+            return obj
+        }
+        Object.values(app.plugins.manifests)
+        	  .map(createToggleCommand)
+        	  // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
+        	  .map(function(obj) { plugin.addCommand(obj) });
         const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
         MySettingTab.display = async function() {
         	const { containerEl: El } = MySettingTab;
@@ -82,7 +76,7 @@ function constructor(app, manifest) {
         	Object.entries(app.plugins.manifests).forEach(
         		function([id, pluginData], index, arr) {
         			if (! pluginArr[id]) {
-        				pluginArr[id] = { delay: "0", enabled: pluginStatus(id) }
+        				pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
         			}
         			const data = pluginArr[id];
         			const st = new obsidian.Setting(El)
@@ -94,27 +88,17 @@ function constructor(app, manifest) {
         					tg.setValue(pluginStatus(id))
         					tg.onChange(
         						function(value) {
-        							togglePlugin(id, value, pluginArr[id])
+                                    pluginArr[id].enabled = value;
         						})
         				})
         			st.addText(
         				function(tx) {
         					tx.inputEl.type = "number"
-        					tx.setValue(data.delay)
-        					tx.onChange(async function(delay) {
-        						pluginArr[id]["delay"] = delay
-        						await plugin.saveData(pluginSettings)
-        						if (app.plugins.enabledPlugins.has(id)) {
-        							if (delay > 0) {
-        								app.plugins.disablePluginAndSave(id);
-        								app.plugins.enablePlugin(id);
-        							}
-        						} else if (delay == 0) {
-        							if (pluginStatus(id) == true) {
-        								app.plugins.enablePluginAndSave(id);
-        							}
-        						}
-        						})
+        				    const delayInSeconds = (data.delay / 1000).toString()
+        					tx.setValue(delayInSeconds)
+        					tx.onChange(function(delay) {
+        					    pluginArr[id].delay = Number(delay * 1000)
+        					})
         				})
         		}
         	)
