@@ -196,47 +196,72 @@ Object.values(app.plugins.manifests)
 #+end_src
 
 *** Register Settings Panel
+Alike the majority of Obsidian plugins, we too create a settings panel for easy configuration by the user. However, in our case we're making a close replication of the features provided in Obsidian's own 'Community Plugin' page within the settings. Ideally we would replace it, but this has yet to me implemented.
 
+**** Blacklist
+However, we first need to limit plugins which don't support lazy loading. Currently only this plugin is unsupported as it's unable to manage itself. We'll see this data later when generating the settings.
+
+NOTE: The user's can still edit the values manually to enable lazy loading. This is intentional.
+
+#+begin_src js
+  const blacklist = [
+    "obsidian-plugin-manager",
+  ]
+#+end_src
+
+**** Plugin List
 The settings panel is a list of every installed plugin with a few options. The following loops between each plugin and adds it to the settings panel.
 
 #+begin_src js
-const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-MySettingTab.display = async function() {
-	const { containerEl: El } = MySettingTab;
-	El.empty();
-	Object.entries(app.plugins.manifests).forEach(
-		function([id, pluginData], index, arr) {
-			if (! pluginArr[id]) {
-				pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
-			}
-			const data = pluginArr[id];
-			const st = new obsidian.Setting(El)
-			const manifest = app.plugins.manifests[id]
-			st.setName(manifest.name)
-			st.setDesc(manifest.description)
-			st.addToggle(
-				function(tg) {
-					tg.setValue(pluginStatus(id))
-					tg.onChange(
-						function(value) {
-                            pluginArr[id].enabled = value;
-						})
-				})
-			st.addText(
-				function(tx) {
-					tx.inputEl.type = "number"
-				    const delayInSeconds = (data.delay / 1000).toString()
-					tx.setValue(delayInSeconds)
-					tx.onChange(function(delay) {
-					    pluginArr[id].delay = Number(delay * 1000)
-					})
-				})
-		}
-	)
-}
+  const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
+  MySettingTab.display = async function() {
+    const { containerEl: El } = MySettingTab;
+    El.empty();
+    Object.entries(app.plugins.manifests).forEach(
+      function([id, pluginData], index, arr) {
+        if (! pluginArr[id]) {
+          pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
+        }
+        const data = pluginArr[id];
+        const st = new obsidian.Setting(El)
+        const manifest = app.plugins.manifests[id]
+        st.setName(manifest.name)
+        st.setDesc(manifest.description)
+        st.addToggle(
+          function(tg) {
+            tg.setValue(pluginStatus(id))
+            tg.onChange(
+              function(value) {
+                              pluginArr[id].enabled = value;
+              })
+          })
+        // If plugin id on the blacklist, don't allow EU to change load delay; 
+        if (! blacklist.includes(id)) {
+          st.addText(
+              function(tx) {
+                  tx.inputEl.type = "number"
+                  const delayInSeconds = (data.delay / 1000).toString()
+                  tx.setValue(delayInSeconds)
+                  tx.onChange(function(delay) {
+                      pluginArr[id].delay = Number(delay * 1000)
+                  })
+              }
+          )
+        } else {
+          st.addText(
+              function(tx) {
+                  tx.inputEl.type = "text"
+                  tx.setPlaceholder("Unavailable")
+              }
+          )
+        }
+      }
+    )
+  }
 #+end_src
 
-Now that we've created the settings panel we need to register it with the `addSettingTab` API function.
+**** Register
+Now that we've created the settings object we need to register it with the `addSettingTab` API function.
 
 #+begin_src js
 plugin.addSettingTab(MySettingTab);

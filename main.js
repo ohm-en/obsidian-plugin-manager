@@ -69,39 +69,53 @@ function constructor(app, manifest) {
         	  .map(createToggleCommand)
         	  // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
         	  .map(function(obj) { plugin.addCommand(obj) });
+        const blacklist = [
+          "obsidian-plugin-manager",
+        ]
         const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
         MySettingTab.display = async function() {
-        	const { containerEl: El } = MySettingTab;
-        	El.empty();
-        	Object.entries(app.plugins.manifests).forEach(
-        		function([id, pluginData], index, arr) {
-        			if (! pluginArr[id]) {
-        				pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
-        			}
-        			const data = pluginArr[id];
-        			const st = new obsidian.Setting(El)
-        			const manifest = app.plugins.manifests[id]
-        			st.setName(manifest.name)
-        			st.setDesc(manifest.description)
-        			st.addToggle(
-        				function(tg) {
-        					tg.setValue(pluginStatus(id))
-        					tg.onChange(
-        						function(value) {
+          const { containerEl: El } = MySettingTab;
+          El.empty();
+          Object.entries(app.plugins.manifests).forEach(
+            function([id, pluginData], index, arr) {
+              if (! pluginArr[id]) {
+                pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
+              }
+              const data = pluginArr[id];
+              const st = new obsidian.Setting(El)
+              const manifest = app.plugins.manifests[id]
+              st.setName(manifest.name)
+              st.setDesc(manifest.description)
+              st.addToggle(
+                function(tg) {
+                  tg.setValue(pluginStatus(id))
+                  tg.onChange(
+                    function(value) {
                                     pluginArr[id].enabled = value;
-        						})
-        				})
-        			st.addText(
-        				function(tx) {
-        					tx.inputEl.type = "number"
-        				    const delayInSeconds = (data.delay / 1000).toString()
-        					tx.setValue(delayInSeconds)
-        					tx.onChange(function(delay) {
-        					    pluginArr[id].delay = Number(delay * 1000)
-        					})
-        				})
-        		}
-        	)
+                    })
+                })
+              // If plugin id on the blacklist, don't allow EU to change load delay; 
+              if (! blacklist.includes(id)) {
+                st.addText(
+                    function(tx) {
+                        tx.inputEl.type = "number"
+                        const delayInSeconds = (data.delay / 1000).toString()
+                        tx.setValue(delayInSeconds)
+                        tx.onChange(function(delay) {
+                            pluginArr[id].delay = Number(delay * 1000)
+                        })
+                    }
+                )
+              } else {
+                st.addText(
+                    function(tx) {
+                        tx.inputEl.type = "text"
+                        tx.setPlaceholder("Unavailable")
+                    }
+                )
+              }
+            }
+          )
         }
         plugin.addSettingTab(MySettingTab);
     }
