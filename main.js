@@ -76,7 +76,15 @@ function constructor(app, manifest) {
         MySettingTab.display = async function() {
           const { containerEl: El } = MySettingTab;
           El.empty();
-          Object.entries(app.plugins.manifests).forEach(
+          // The Manifests are listed based on their id instead of their shown name, so we need to sort it in alphabetical order by what the user sees: the name.
+          const sortedPlugins = Object.entries(app.plugins.manifests).sort(
+            function(a, b) {
+                const A = a[1].name.toUpperCase();
+                const B = b[1].name.toUpperCase();
+                return (A < B) ? -1 : (A > B) ? 1 : 0;
+            }
+          )
+          sortedPlugins.forEach(
             function([id, pluginData], index, arr) {
               if (! pluginArr[id]) {
                 pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
@@ -98,19 +106,21 @@ function constructor(app, manifest) {
               if (! blacklist.includes(id)) {
                 st.addText(
                     function(tx) {
-                        tx.inputEl.type = "number"
-                        const delayInSeconds = (data.delay / 1000).toString()
-                        tx.setValue(delayInSeconds)
-                        tx.onChange(function(delay) {
-                            pluginArr[id].delay = Number(delay * 1000)
-                        })
+                      tx.inputEl.type = "number"
+                      tx.setPlaceholder("Startup Delay In Seconds")
+                      const delayInSeconds = (data.delay / 1000).toString()
+                      tx.setValue(delayInSeconds)
+                      tx.onChange(function(delay) {
+                          pluginArr[id].delay = Number(delay * 1000)
+                      })
                     }
                 )
               } else {
                 st.addText(
                     function(tx) {
-                        tx.inputEl.type = "text"
-                        tx.setPlaceholder("Unavailable")
+                      tx.inputEl.type = "text"
+                      tx.setPlaceholder("Unavailable")
+                      tx.setDisabled(true)  
                     }
                 )
               }
