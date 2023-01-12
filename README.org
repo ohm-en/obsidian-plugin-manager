@@ -4,32 +4,26 @@
 #+title: Obsidian - Plugin Manager
 #+auto_tangle: t
 
-* Table of Contents :toc:
+* Table of Contents                                                 :toc_2:
 - [[#description][Description]]
+  - [[#features][Features]]
   - [[#manual-installation][(Manual) Installation]]
 - [[#the-program][The Program]]
-  - [[#effects][Effects]]
   - [[#preamble][Preamble]]
+  - [[#functions][Functions]]
   - [[#logic][Logic]]
-  - [[#x-toggle-plugin][[X] Toggle Plugin]]
-  - [[#x-get-list-of-installed-plugins][[X] Get List of Installed Plugins]]
-  - [[#specific-library][Specific Library]]
   - [[#obsidian-overhead][Obsidian Overhead]]
 - [[#environment--compilation][Environment & Compilation]]
-  - [[#compile-with-org-babel-tangle][Compile With Org-Babel-Tangle]]
-  - [[#eslint][ESLint]]
-  - [[#dependencies][Dependencies]]
+  - [[#compile-w-noweb][Compile w/ Noweb]]
+  - [[#build-dependencies][Build Dependencies]]
   - [[#manifest][Manifest]]
-  - [[#brat-manifest][BRAT Manifest]]
-- [[#scripts][Scripts]]
-  - [[#bump-version][Bump Version]]
 - [[#credits][Credits]]
 - [[#license][LICENSE]]
 
 * Description
-This is a plugin which manages plugins for [Obsidian.md](https://obsidian.md/).
+A plugin for [[https://obsidian.md/][ObsidianMD]] which provides better management for other plugins.
 
-*Features*:
+** Features
 - Lazy Loading. Create a startup delay for a given plugin.
 - Plugin toggling via command and/or hotkey.
 
@@ -42,18 +36,10 @@ Until the plugin has been published to the community tab, please use the below m
 4. After reloading the Obsidian plugin list, you will see the plugin disabled. Enable it.
 
 * The Program
-This plugin is written as a literate program. If you'd like to read the source-code, you'll find its entirety below with relevant descriptions.
-
-** Effects
-- Obsidian API:
-  - Register Settings panel
-  - Register commands
-  - Read/save settings data
-  - Alter plugin state
+This plugin is written in literate format. If you'd like to read the source-code, you can find it below with relevant descriptions or in the file `main.js`.
 
 ** Preamble
 *** Libraries
-
 The program only depends on the Obsidian API. Though unclear, this includes all functions, methods, etc. under `obsidian`, `plugin`, and `app`.
 
 #+NAME: dependencies
@@ -62,7 +48,7 @@ var obsidian = require('obsidian');
 #+end_src
 *** Arguments
 
-Our program (plugin) is called by the Obsidian application based off our exported module (see [[target]]).
+Our program (plugin) is called by the Obsidian application based off our exported module (see [[Compile w/ Noweb]]).
 
 At runtime, the program receives two variables from Obsidian: `app` and `manifest`. These values are used excursively to interact the Obsidian API. Please see the [[https://github.com/obsidianmd/obsidian-api][documentation]] for more information.
 
@@ -297,7 +283,8 @@ function constructor(app, manifest) {
 #+end_src
 
 * Environment & Compilation
-** Compile With Org-Babel-Tangle
+** Compile w/ Noweb
+This literate document is written in org-mode and use `org-babel-tangle` to compile the relevant code blocks into files. The `<<NAME>>` syntax is used to achieve this.
 
 #+begin_src js :noweb yes :tangle ./main.js
 'use strict';
@@ -307,8 +294,8 @@ function constructor(app, manifest) {
 <<entry-point>>
 module.exports = constructor;
 #+end_src
-** ESLint
-** Dependencies
+** Build Dependencies
+Defines a `package.json` file used for Node.js; however, this project makes little use of its features.
 
 #+begin_src json :tangle ./package.json
 {
@@ -335,6 +322,8 @@ module.exports = constructor;
 #+end_src
 
 ** Manifest
+A manifest file containing metadata as required by a ObsidianMD plugin.
+
 #+begin_src json :tangle manifest.json
 {
 	"id": "obsidian-plugin-manager",
@@ -349,7 +338,7 @@ module.exports = constructor;
 #+end_src
 
 *** BRAT/Beta
-A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]] proper support. Expect for the version number It's the same as the normal manifest.
+A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]] proper support. 
 
 #+begin_src json :tangle ./manifest-beta.json
 {
@@ -362,25 +351,6 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
 }
-#+end_src
-
-* Scripts
-** Bump Version
-#+begin_src js
-import { readFileSync, writeFileSync } from "fs";
-
-const targetVersion = process.env.npm_package_version;
-
-// read minAppVersion from manifest.json and bump version to target version
-let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const { minAppVersion } = manifest;
-manifest.version = targetVersion;
-writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
-
-// update versions.json with target version and minAppVersion from manifest.json
-let versions = JSON.parse(readFileSync("versions.json", "utf8"));
-versions[targetVersion] = minAppVersion;
-writeFileSync("versions.json", JSON.stringify(versions, null, "\t"));
 #+end_src
 
 * Credits
