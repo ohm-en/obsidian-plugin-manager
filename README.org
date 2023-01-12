@@ -338,7 +338,7 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 #+end_src
 
 *** BRAT/Beta
-A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]] proper support. 
+A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]] support. 
 
 #+begin_src json :tangle ./manifest-beta.json
 {
