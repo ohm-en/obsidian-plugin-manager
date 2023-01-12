@@ -286,7 +286,7 @@ function constructor(app, manifest) {
 ** Compile w/ Noweb
 This literate document is written in org-mode and use `org-babel-tangle` to compile the relevant code blocks into files. The `<<NAME>>` syntax is used to achieve this.
 
-#+begin_src js :noweb yes :tangle ./main.js
+#+begin_src js :noweb yes :tangle .obsidian/plugins/src/main.js
 'use strict';
 
 <<dependencies>>
@@ -324,7 +324,7 @@ Defines a `package.json` file used for Node.js; however, this project makes litt
 ** Manifest
 A manifest file containing metadata as required by a ObsidianMD plugin.
 
-#+begin_src json :tangle manifest.json
+#+begin_src json :tangle ./manifest.json
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
