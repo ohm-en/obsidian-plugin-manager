@@ -44,7 +44,7 @@ The program only depends on the Obsidian API. Though unclear, this includes all 
 
 #+NAME: dependencies
 #+begin_src js
-var obsidian = require('obsidian');
+  var obsidian = require("obsidian");
 #+end_src
 *** Arguments
 
@@ -64,16 +64,23 @@ Our store will furthermore be cached on the system using the Obsidian API (in a 
 
 #+begin_src js
   const DEFAULT_SETTINGS = {
-      pluginArr: function() {
-          let array = {}
-          Object.keys(app.plugins.manifests).forEach(
-              function(pluginId) {
-                  array[pluginId] = { id: pluginId, delay: 0, enabled: pluginStatus(pluginId) }
-              })
-          return array
-          }(),
-  }
-  const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+    pluginArr: (function () {
+      let array = {};
+      Object.keys(app.plugins.manifests).forEach(function (pluginId) {
+        array[pluginId] = {
+          id: pluginId,
+          delay: 0,
+          enabled: pluginStatus(pluginId),
+        };
+      });
+      return array;
+    })(),
+  };
+  const pluginSettings = Object.assign(
+    {},
+    DEFAULT_SETTINGS,
+    await plugin.loadData()
+  );
 #+end_src
 
 **** The Global Listener
@@ -88,31 +95,36 @@ Plugin States:
 #+begin_src js
   const pluginListen = {
     async set(obj, prop, value) {
-        const nbj = Object.assign({}, obj); nbj[prop] = value;
-        const { id } = obj;
-        if (nbj.enabled) {
+      const nbj = Object.assign({}, obj);
+      nbj[prop] = value;
+      const { id } = obj;
+      if (nbj.enabled) {
         // If lazy loading disabled
-        if (nbj.delay == 0) { app.plugins.enablePluginAndSave(id); }
+        if (nbj.delay == 0) {
+          app.plugins.enablePluginAndSave(id);
+        }
         // If lazy loading newly enabled
-        else if (obj.delay == 0) { app.plugins.disablePluginAndSave(id); app.plugins.enablePlugin(id) }
+        else if (obj.delay == 0) {
+          app.plugins.disablePluginAndSave(id);
+          app.plugins.enablePlugin(id);
+        }
         // If lazy loading already enabled
-        else { app.plugins.enablePlugin(id) }
+        else {
+          app.plugins.enablePlugin(id);
+        }
+      } else {
+        app.plugins.disablePluginAndSave(id);
       }
-      else {
-        app.plugins.disablePluginAndSave(id)
-       }
-        Reflect.set(...arguments)
+      Reflect.set(...arguments);
       await plugin.saveData(pluginSettings);
-        return true
-    }
-  }
+      return true;
+    },
+  };
 
   // NOTE: `pluginArr` is defined in the above block for access within `onunload`.
-  Object.entries(pluginSettings.pluginArr)
-      .forEach(
-          function([id, pluginObj]) {
-              pluginArr[id] = new Proxy(pluginObj, pluginListen);
-          })
+  Object.entries(pluginSettings.pluginArr).forEach(function ([id, pluginObj]) {
+    pluginArr[id] = new Proxy(pluginObj, pluginListen);
+  });
 #+end_src
 
 ** Functions 
@@ -123,9 +135,9 @@ Plugin States:
 Checks the "true" status of a plugin's status using the Obsidian API. This does not check with the global object, but they should always match regardless.
 
 #+begin_src js
-const pluginStatus = function(pluginId) {
-	return app.plugins.plugins.hasOwnProperty(pluginId);
-}
+  const pluginStatus = function (pluginId) {
+    return app.plugins.plugins.hasOwnProperty(pluginId);
+  };
 #+end_src
 
 ** Logic
@@ -166,14 +178,13 @@ However, `app.plugins.enablePlugin` only works if `app.plugin.enablePluginAndSav
 In the case where this plugin is removed or disabled I'm sure users would appreciate keeping their previously lazy loaded plugins enabled. Therefore, I using Obsidian's `onunload` function I will save all the plugins state properly.
 
 #+begin_src js
-  console.log(app.plugins.enabledPlugins)
-  if (! app.plugins.enabledPlugins.has("obsidian-plugin-manager")) {  
-      Object.entries(pluginArr).forEach(
-          function([id, data]) {
-          if (data.enabled & data.delay > 0) {
-              app.plugins.disablePlugin(id)
-              app.plugins.enablePluginAndSave(id)
-          }});
+  if (!app.plugins.enabledPlugins.has("obsidian-plugin-manager")) {
+    Object.entries(pluginArr).forEach(function ([id, data]) {
+      if (data.enabled & (data.delay > 0)) {
+        app.plugins.disablePlugin(id);
+        app.plugins.enablePluginAndSave(id);
+      }
+    });
   }
 #+end_src
 
@@ -185,24 +196,27 @@ For this to work, we first need a function which toggles the plugin's state on/o
 Furthermore, we need an object which abides by Obsidian's command API. This simply requires a `id`, `name`, and `callback` (fn) as attributes which the below command handles nicely.
 
 #+begin_src js
-const createToggleCommand = function({id, name}) {
-    const obj = {id: `toggle-${id}`,
-                name: `toggle ${name}`,
-                callback: function() {
-                            pluginArr[id].enabled = !pluginArr[id].enabled
-                        }
-    }
-    return obj
-}
+  const createToggleCommand = function ({ id, name }) {
+    const obj = {
+      id: `toggle-${id}`,
+      name: `toggle ${name}`,
+      callback: function () {
+        pluginArr[id].enabled = !pluginArr[id].enabled;
+      },
+    };
+    return obj;
+  };
 #+end_src
 
 Using the above function to generate the required JS object, we only need to map over a list of plugins (provided by manifests in the case) to add each command one by one.
 
 #+begin_src js :noweb yes
-Object.values(app.plugins.manifests)
-	  .map(createToggleCommand)
-	  // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
-	  .map(function(obj) { plugin.addCommand(obj) });
+  Object.values(app.plugins.manifests)
+    .map(createToggleCommand)
+    // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
+    .map(function (obj) {
+      plugin.addCommand(obj);
+    });
 #+end_src
 
 *** Register Settings Panel
@@ -214,77 +228,68 @@ However, we first need to limit plugins which don't support lazy loading. Curren
 NOTE: The user's can still edit the values manually to enable lazy loading. This is intentional.
 
 #+begin_src js
-  const blacklist = [
-    "obsidian-plugin-manager",
-  ]
+  const blacklist = ["obsidian-plugin-manager"];
 #+end_src
 
 **** Plugin List
 The settings panel is a list of every installed plugin with a few options. The following loops between each plugin and adds it to the settings panel.
 
 #+begin_src js
-  const MySettingTab = new obsidian.PluginSettingTab(app, plugin)
-  MySettingTab.display = async function() {
+  const MySettingTab = new obsidian.PluginSettingTab(app, plugin);
+  MySettingTab.display = async function () {
     const { containerEl: El } = MySettingTab;
     El.empty();
     // The Manifests are listed based on their id instead of their shown name, so we need to sort it in alphabetical order by what the user sees: the name.
-    const sortedPlugins = Object.entries(app.plugins.manifests).sort(
-      function(a, b) {
-          const A = a[1].name.toUpperCase();
-          const B = b[1].name.toUpperCase();
-          return (A < B) ? -1 : (A > B) ? 1 : 0;
+    const sortedPlugins = Object.entries(app.plugins.manifests).sort(function (
+      a,
+      b
+    ) {
+      const A = a[1].name.toUpperCase();
+      const B = b[1].name.toUpperCase();
+      return A < B ? -1 : A > B ? 1 : 0;
+    });
+    sortedPlugins.forEach(function ([id, pluginData], index, arr) {
+      if (!pluginArr[id]) {
+        pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) };
       }
-    )
-    sortedPlugins.forEach(
-      function([id, pluginData], index, arr) {
-        if (! pluginArr[id]) {
-          pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }
-        }
-        const data = pluginArr[id];
-        const st = new obsidian.Setting(El)
-        const manifest = app.plugins.manifests[id]
-        st.setName(manifest.name)
-        st.setDesc(manifest.description)
-        st.addToggle(
-          function(tg) {
-            tg.setValue(pluginStatus(id))
-            tg.onChange(
-              function(value) {
-                              pluginArr[id].enabled = value;
-              })
-          })
-        // If plugin id on the blacklist, don't allow EU to change load delay; 
-        if (! blacklist.includes(id)) {
-          st.addText(
-              function(tx) {
-                tx.inputEl.type = "number"
-                tx.setPlaceholder("Startup Delay In Seconds")
-                const delayInSeconds = (data.delay / 1000).toString()
-                tx.setValue(delayInSeconds)
-                tx.onChange(function(delay) {
-                    pluginArr[id].delay = Number(delay * 1000)
-                })
-              }
-          )
-        } else {
-          st.addText(
-              function(tx) {
-                tx.inputEl.type = "text"
-                tx.setPlaceholder("Unavailable")
-                tx.setDisabled(true)  
-              }
-          )
-        }
+      const data = pluginArr[id];
+      const st = new obsidian.Setting(El);
+      const manifest = app.plugins.manifests[id];
+      st.setName(manifest.name);
+      st.setDesc(manifest.description);
+      st.addToggle(function (tg) {
+        tg.setValue(pluginStatus(id));
+        tg.onChange(function (value) {
+          pluginArr[id].enabled = value;
+        });
+      });
+      // If plugin id on the blacklist, don't allow EU to change load delay;
+      if (!blacklist.includes(id)) {
+        st.addText(function (tx) {
+          tx.inputEl.type = "number";
+          tx.setPlaceholder("Startup Delay In Seconds");
+          const delayInSeconds = (data.delay / 1000).toString();
+          tx.setValue(delayInSeconds);
+          tx.onChange(function (delay) {
+            pluginArr[id].delay = Number(delay * 1000);
+          });
+        });
+      } else {
+        st.addText(function (tx) {
+          tx.inputEl.type = "text";
+          tx.setPlaceholder("Unavailable");
+          tx.setDisabled(true);
+        });
       }
-    )
-  }
+    });
+  };
 #+end_src
 
 **** Register
 Now that we've created the settings object we need to register it with the `addSettingTab` API function.
 
 #+begin_src js
-plugin.addSettingTab(MySettingTab);
+  plugin.addSettingTab(MySettingTab);
 #+end_src
 
 ** Obsidian Overhead
@@ -299,7 +304,7 @@ Furthermore, code put within the `plugin.onload` function will be our entry poin
   function constructor(app, manifest) {
     const plugin = new obsidian.Plugin(app, manifest);
     const pluginArr = {};
-  
+
     plugin.onload = async function() {
       <<specific-library>>
       <<store>>
@@ -330,15 +335,11 @@ Defines a `package.json` file used for Node.js; however, this project makes litt
 
 #+begin_src json :tangle ./package.json
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-plugin-manager",
 	"version": "0.1.1",
 	"description": "",
 	"main": "main.js",
-	"scripts": {
-		"dev": "npx rollup --config rollup.config.js -w",
-		"build": "npx rollup --config rollup.config.js --environment BUILD:production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
-	},
+	"scripts": {},
 	"keywords": [],
 	"author": "ohm-en",
 	"license": "MIT",
@@ -347,7 +348,7 @@ Defines a `package.json` file used for Node.js; however, this project makes litt
 		"builtin-modules": "^3.2.0",
 		"eslint": "^8.25.0",
 		"eslint-config-google": "^0.14.0",
-		"obsidian": "^0.12.17",
+		"obsidian": "^0.12.17"
 	}
 }
 #+end_src
