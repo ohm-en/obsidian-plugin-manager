@@ -63,17 +63,17 @@ A single global object will be used as our "store" throughout the program. It kn
 Our store will furthermore be cached on the system using the Obsidian API (in a file titled `data.json`). The program has no support for lazy loading without this file. However, for other functions, we create some initial data if the cache has no or little data.
 
 #+begin_src js
-const DEFAULT_SETTINGS = {
-    pluginArr: function() {
-        let array = {}
-        Object.keys(app.plugins.manifests).forEach(
-            function(pluginId) {
-                array[pluginId] = { id: pluginId, delay: 0, enabled: pluginStatus(pluginId) }
-            })
-        return array
-        }(),
-}
-const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
+  const DEFAULT_SETTINGS = {
+      pluginArr: function() {
+          let array = {}
+          Object.keys(app.plugins.manifests).forEach(
+              function(pluginId) {
+                  array[pluginId] = { id: pluginId, delay: 0, enabled: pluginStatus(pluginId) }
+              })
+          return array
+          }(),
+  }
+  const pluginSettings = Object.assign({}, DEFAULT_SETTINGS, await plugin.loadData());
 #+end_src
 
 **** The Global Listener
@@ -86,33 +86,33 @@ Plugin States:
 4. Disabled & Unsaved | Disabled until next boot
 
 #+begin_src js
-const pluginListen = {
-	async set(obj, prop, value) {
-	    const nbj = Object.assign({}, obj); nbj[prop] = value;
-	    const { id } = obj;
-	  	if (nbj.enabled) {
-			// If lazy loading disabled
-			if (nbj.delay == 0) { app.plugins.enablePluginAndSave(id); }
-			// If lazy loading newly enabled
-			else if (obj.delay == 0) { app.plugins.disablePluginAndSave(id); app.plugins.enablePlugin(id) }
-			// If lazy loading already enabled
-			else { app.plugins.enablePlugin(id) }
-		}
-		else {
-			app.plugins.disablePluginAndSave(id)
-		 }
-	    Reflect.set(...arguments)
-		await plugin.saveData(pluginSettings);
-	    return true
-	}
-}
+  const pluginListen = {
+    async set(obj, prop, value) {
+        const nbj = Object.assign({}, obj); nbj[prop] = value;
+        const { id } = obj;
+        if (nbj.enabled) {
+        // If lazy loading disabled
+        if (nbj.delay == 0) { app.plugins.enablePluginAndSave(id); }
+        // If lazy loading newly enabled
+        else if (obj.delay == 0) { app.plugins.disablePluginAndSave(id); app.plugins.enablePlugin(id) }
+        // If lazy loading already enabled
+        else { app.plugins.enablePlugin(id) }
+      }
+      else {
+        app.plugins.disablePluginAndSave(id)
+       }
+        Reflect.set(...arguments)
+      await plugin.saveData(pluginSettings);
+        return true
+    }
+  }
 
-const pluginArr = {};
-Object.entries(pluginSettings.pluginArr)
-    .forEach(
-        function([id, pluginObj]) {
-            pluginArr[id] = new Proxy(pluginObj, pluginListen);
-        })
+  // NOTE: `pluginArr` is defined in the above block for access within `onunload`.
+  Object.entries(pluginSettings.pluginArr)
+      .forEach(
+          function([id, pluginObj]) {
+              pluginArr[id] = new Proxy(pluginObj, pluginListen);
+          })
 #+end_src
 
 ** Functions 
@@ -139,20 +139,44 @@ Using a saved listed of plugins and their relevant on load delay, this is trivia
 
 This fn puts the plugin in a currently enabled state but disabled on boot. Therefore to achieve lazy loading, we only need to set a function on start which enables relevant plugins based on their delay.
 
-Note: `app.plugins.enablePlugin` only works if `app.plugin.enablePluginAndSave` has not been first used. If that's the case, you must first disable it with `app.plguin.disablePluginAndSave`.
+However, `app.plugins.enablePlugin` only works if `app.plugin.enablePluginAndSave` has not been first used. If that's the case, you must first disable it with `app.plugin.disablePluginAndSave`. In our case, this happens when plugins have a saved delay, but Obsidian Plugin Manager had been disabled, so this must be handled. Though as a consequence, this does create some scenarios where the user may experience interruptions or slow downs from a plethora of plugins getting disabled and enabled again.
 
 #+begin_src js
-Object.entries(pluginArr).forEach(
-    function([id, data]) {
+  Object.entries(pluginArr).forEach(
+      function([id, data]) {
         if (data.enabled & data.delay > 0) {
-            setTimeout(
+          if (pluginStatus(id) == true) {
+            app.plugins.disablePluginAndSave(id)
+            app.plugins.enablePlugin(id)
+          } else {
+              setTimeout(
                 function() {
-                    app.plugins.enablePlugin([id])
+                    app.plugins.enablePlugin(id)
                 }, data.delay)
+          }
         }
-    }
-);
+      }
+  );
 #+end_src
+**** Clean Up
+:PROPERTIES:
+:header-args: :noweb-ref clean-up 
+:END:
+
+In the case where this plugin is removed or disabled I'm sure users would appreciate keeping their previously lazy loaded plugins enabled. Therefore, I using Obsidian's `onunload` function I will save all the plugins state properly.
+
+#+begin_src js
+  console.log(app.plugins.enabledPlugins)
+  if (! app.plugins.enabledPlugins.has("obsidian-plugin-manager")) {  
+      Object.entries(pluginArr).forEach(
+          function([id, data]) {
+          if (data.enabled & data.delay > 0) {
+              app.plugins.disablePlugin(id)
+              app.plugins.enablePluginAndSave(id)
+          }});
+  }
+#+end_src
+
 *** Quick Toggle For Plugins
 Takes a list of installed plugins and creates a corresponding array of Obsidian commands which are responsible for toggling the relevant plugin on/off. If desired, the user can add a keybinding using the Obsidian GUI.
 
@@ -272,14 +296,21 @@ Furthermore, code put within the `plugin.onload` function will be our entry poin
 
 #+NAME: entry-point
 #+begin_src javascript :noweb yes
-function constructor(app, manifest) {
-	const plugin = new obsidian.Plugin(app, manifest)
+  function constructor(app, manifest) {
+    const plugin = new obsidian.Plugin(app, manifest);
+    const pluginArr = {};
+  
     plugin.onload = async function() {
-        <<specific-library>>
-        <<store>>
-        <<business-logic>>
+      <<specific-library>>
+      <<store>>
+      <<business-logic>>
     }
-	return plugin; }
+
+    plugin.onunload = function() {
+      <<clean-up>>
+    }
+
+    return plugin; }
 #+end_src
 
 * Environment & Compilation
