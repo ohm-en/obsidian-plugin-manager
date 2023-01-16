@@ -30,17 +30,17 @@ A plugin for [[https://obsidian.md/][ObsidianMD]] which provides better manageme
 ** (Manual) Installation
 Until the plugin has been published to the community tab, please use the below method to install:
 
-1. Download the latest `main.js` & `manifest.json` from the latest [[https://github.com/ohm-en/obsidian-plugin-manager/releases][release]].
-2. Create a folder--with any name--in `.obsidian/plugins` at your vaults location.
+1. Download the latest ~main.js~ & ~manifest.json~ from the latest [[https://github.com/ohm-en/obsidian-plugin-manager/releases][release]].
+2. Create a folder--with any name--in ~.obsidian/plugins~ at your vaults location.
 3. Move the downloaded files into the created folder.
-4. After reloading the Obsidian plugin list, you will see the plugin disabled. Enable it.
+4. After reloading the Obsidian plugin list, you will see the plugin. Enable it.
 
 * The Program
-This plugin is written in literate format. If you'd like to read the source-code, you can find it below with relevant descriptions or in the file `main.js`.
+This plugin is written in literate format. If you'd like to read the source-code, you can find it below with relevant descriptions or in the file titled ~main.js~.
 
 ** Preamble
 *** Libraries
-The program only depends on the Obsidian API. Though unclear, this includes all functions, methods, etc. under `obsidian`, `plugin`, and `app`.
+The program only depends on the Obsidian API. Though unclear, this includes all functions, methods, etc. under ~obsidian~, ~plugin~, and ~app~.
 
 #+NAME: dependencies
 #+begin_src js
@@ -50,17 +50,17 @@ The program only depends on the Obsidian API. Though unclear, this includes all 
 
 Our program (plugin) is called by the Obsidian application based off our exported module (see [[Compile w/ Noweb]]).
 
-At runtime, the program receives two variables from Obsidian: `app` and `manifest`. These values are used excursively to interact the Obsidian API. Please see the [[https://github.com/obsidianmd/obsidian-api][documentation]] for more information.
+When Obsidian executes the plugin, we receive the ~app~ and ~manifest~ variables which are used to interact with the Obsidian API. Please see the [[https://github.com/obsidianmd/obsidian-api][documentation]] for more information.
 
 *** Global Store
 :PROPERTIES:
 :header-args: :noweb-ref store 
 :END:
 
-A single global object will be used as our "store" throughout the program. It known as the `pluginArr` and is used to defer ideally all mutable data. Additionally, we use a listener on the object to reflect its state onto the environment.
+A single global object will be used as our "store" throughout the program. It known as the ~pluginArr~ and is used to defer ideally all mutable data. Additionally, we use a listener on the object to reflect its state onto the environment.
 
 **** Saved Settings
-Our store will furthermore be cached on the system using the Obsidian API (in a file titled `data.json`). The program has no support for lazy loading without this file. However, for other functions, we create some initial data if the cache has no or little data.
+Our store will furthermore be cached on the system using the Obsidian API (in a file titled ~data.json~). The program has no support for lazy loading without the data from this file.
 
 #+begin_src js
   const DEFAULT_SETTINGS = {
@@ -84,13 +84,15 @@ Our store will furthermore be cached on the system using the Obsidian API (in a 
 #+end_src
 
 **** The Global Listener
-In hopes of containing complexity in the program, this listener attempts to maintain the proper environment state by listening to changes to the global object, `pluginArr`. It's primary goal is to keep each plugin in the correct state of enablement.
+In hopes of containing complexity in the program, this listener attempts to maintain the proper environment state by listening to changes to the global object, ~pluginArr~. It's primary goal is to keep each plugin in the correct state of enablement.
 
-Plugin States:
-1. Enabled & Saved    | Enabled on boot
-2. Enabled & Unsaved  | Enabled until next boot 
-3. Disabled & Saved   | Disabled
-4. Disabled & Unsaved | Disabled until next boot
+| Plugin States      | Desc.                    |
+|--------------------+--------------------------|
+| Enabled & Saved    | Enabled on boot          |
+| Enabled & Unsaved  | Enabled until next boot  |
+| Disabled & Saved   | Disabled                 |
+| Disabled & Unsaved | Disabled until next boot |
+|--------------------+--------------------------|
 
 #+begin_src js
   const pluginListen = {
@@ -132,7 +134,7 @@ Plugin States:
 :header-args: :noweb-ref specific-library
 :END:
 *** Check If Plugin Is Enabled
-Checks the "true" status of a plugin's status using the Obsidian API. This does not check with the global object, but they should always match regardless.
+Checks the state of a plugin with the Obsidian API. This does not check with the store, but they should always match.
 
 #+begin_src js
   const pluginStatus = function (pluginId) {
@@ -147,11 +149,11 @@ Checks the "true" status of a plugin's status using the Obsidian API. This does 
 *** Lazy Load Plugins
 The original purpose of this plugin was to implement an easier variation of TftHacker's lazy-loading.
 
-Using a saved listed of plugins and their relevant on load delay, this is trivially achieved with Obsidian's `app.plugins.enablePlugin` function.
+Using a saved listed of plugins and their relevant on load delay, this is trivially achieved with Obsidian's ~app.plugins.enablePlugin~ function which enabled a plugin until the application state of reloaded (reboot).
 
-This fn puts the plugin in a currently enabled state but disabled on boot. Therefore to achieve lazy loading, we only need to set a function on start which enables relevant plugins based on their delay.
+Therefore to achieve lazy loading, we need to set a function on start which enables relevant plugins based on their delay.
 
-However, `app.plugins.enablePlugin` only works if `app.plugin.enablePluginAndSave` has not been first used. If that's the case, you must first disable it with `app.plugin.disablePluginAndSave`. In our case, this happens when plugins have a saved delay, but Obsidian Plugin Manager had been disabled, so this must be handled. Though as a consequence, this does create some scenarios where the user may experience interruptions or slow downs from a plethora of plugins getting disabled and enabled again.
+However, ~app.plugins.enablePlugin~ only works if ~app.plugin.enablePluginAndSave~ has not been first used. If that's the case, you must first disable it with ~app.plugin.disablePluginAndSave~. In our case, this happens when plugins have a saved delay, but Obsidian Plugin Manager had been disabled, so this must be handled. Though as a consequence, this does create some scenarios where the user may experience interruptions or slow downs from a plethora of plugins getting disabled and enabled again.
 
 #+begin_src js
   Object.entries(pluginArr).forEach(
@@ -175,7 +177,7 @@ However, `app.plugins.enablePlugin` only works if `app.plugin.enablePluginAndSav
 :header-args: :noweb-ref clean-up 
 :END:
 
-In the case where this plugin is removed or disabled I'm sure users would appreciate keeping their previously lazy loaded plugins enabled. Therefore, I using Obsidian's `onunload` function I will save all the plugins state properly.
+In the case where this plugin is removed or disabled I'm sure users would appreciate keeping their previously lazy loaded plugins enabled. Therefore, I using Obsidian's ~onunload~ function I will save all the plugins state properly.
 
 #+begin_src js
   if (!app.plugins.enabledPlugins.has("obsidian-plugin-manager")) {
@@ -188,12 +190,14 @@ In the case where this plugin is removed or disabled I'm sure users would apprec
   }
 #+end_src
 
+Furthermore, as seen above, we need to check if the plugin has been disabled or only unloaded as running at every unload would cease all lazy loading functionality. Therefore we check ~app.plugins.enabledPlugins~ to see if our plugin is still enabled.
+
 *** Quick Toggle For Plugins
 Takes a list of installed plugins and creates a corresponding array of Obsidian commands which are responsible for toggling the relevant plugin on/off. If desired, the user can add a keybinding using the Obsidian GUI.
 
-For this to work, we first need a function which toggles the plugin's state on/off while maintaining the proper state (for lazy loading); however, this is already handled by the global listener, so we only need to change the value of `pluginArr[id].enabled` to its inverse.
+For this to work, we first need a function which toggles the plugin's state on/off while maintaining the proper state (for lazy loading); however, this is already handled by the global listener, so we only need to change the value of ~pluginArr[id].enabled~ to its inverse.
 
-Furthermore, we need an object which abides by Obsidian's command API. This simply requires a `id`, `name`, and `callback` (fn) as attributes which the below command handles nicely.
+Furthermore, we need an object which abides by Obsidian's command API. This simply requires a ~id~, ~name~, and ~callback~ (fn) as attributes which the below command handles nicely.
 
 #+begin_src js
   const createToggleCommand = function ({ id, name }) {
@@ -220,7 +224,7 @@ Using the above function to generate the required JS object, we only need to map
 #+end_src
 
 *** Register Settings Panel
-Alike the majority of Obsidian plugins, we too create a settings panel for easy configuration by the user. However, in our case we're making a close replication of the features provided in Obsidian's own 'Community Plugin' page within the settings. Ideally we would replace it, but this has yet to me implemented.
+Alike the majority of Obsidian plugins, we too create a settings panel for easy configuration by the user. However, in our case we're making a close replication of the features provided in Obsidian's own 'Community Plugin' tab. Ideally we would replace it, but this has yet to be implemented.
 
 **** Blacklist
 However, we first need to limit plugins which don't support lazy loading. Currently only this plugin is unsupported as it's unable to manage itself. We'll see this data later when generating the settings.
@@ -286,18 +290,18 @@ The settings panel is a list of every installed plugin with a few options. The f
 #+end_src
 
 **** Register
-Now that we've created the settings object we need to register it with the `addSettingTab` API function.
+Now that we've created the settings object we need to register it with the ~addSettingTab~ API function.
 
 #+begin_src js
   plugin.addSettingTab(MySettingTab);
 #+end_src
 
 ** Obsidian Overhead
-To utilize the Obsidian API, we must extend the `Plugin` object. This object contains most the methods for interacting with the API.
+To utilize the Obsidian API, we must extend the ~Plugin~ object. This object contains most the methods for interacting with the API.
 
-To do so, it's normally done with a class using the `extent` keyword to the Plugin class (`class MyPlugin extends Plugin`), but I've chosen to use a simple function which returns the a plugin object as classes are annoying to work with.
+To do so, it's normally done with a class using the ~extends~ keyword to the Plugin class (~class MyPlugin extends Plugin~), but instead I've chosen to use a simple function which returns the a plugin object.
 
-Furthermore, code put within the `plugin.onload` function will be our entry point.
+Furthermore, code put in ~plugin.onload~ will be the entry point for our "business logic" and ~plugin.unonload~ will be used for the clean up.
 
 #+NAME: entry-point
 #+begin_src javascript :noweb yes
@@ -320,7 +324,7 @@ Furthermore, code put within the `plugin.onload` function will be our entry poin
 
 * Environment & Compilation
 ** Compile w/ Noweb
-This literate document is written in org-mode and use `org-babel-tangle` to compile the relevant code blocks into files. The `<<NAME>>` syntax is used to achieve this.
+This literate document is written in org-mode and use ~org-babel-tangle~ to compile the relevant code blocks into files. The ~<<NAME>>~ syntax is used to achieve this.
 
 #+begin_src js :noweb yes :tangle .obsidian/plugins/src/main.js
 'use strict';
@@ -331,13 +335,13 @@ This literate document is written in org-mode and use `org-babel-tangle` to comp
 module.exports = constructor;
 #+end_src
 ** Build Dependencies
-Defines a `package.json` file used for Node.js; however, this project makes little use of its features.
+Defines a ~package.json~ file used for Node.js; however, this project makes little use of its features.
 
 #+begin_src json :tangle ./package.json
 {
 	"name": "obsidian-plugin-manager",
-	"version": "0.1.1",
-	"description": "",
+	"version": "0.1.2",
+	"description": "Extends plugin management of Obsidian.MD.",
 	"main": "main.js",
 	"scripts": {},
 	"keywords": [],
@@ -360,9 +364,9 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"minAppVersion": "0.13.14",
-	"description": "Better plugin management.",
+	"description": "Extends plugin management of Obsidian.MD.",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
@@ -376,9 +380,9 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
-	"version": "0.1",
+	"version": "0.1.2",
 	"minAppVersion": "0.13.14",
-	"description": "Better plugin management.",
+	"description": "Extends plugin management of Obsidian.MD.",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
