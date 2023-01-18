@@ -3,7 +3,7 @@
 	"name": "Obsidian Plugin Manager",
 	"version": "0.1.2",
 	"minAppVersion": "0.13.14",
-	"description": "Extends plugin management of Obsidian.MD.",
+	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false

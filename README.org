@@ -24,8 +24,8 @@
 A plugin for [[https://obsidian.md/][ObsidianMD]] which provides better management for other plugins.
 
 ** Features
-- Lazy Loading. Create a startup delay for a given plugin.
-- Plugin toggling via command and/or hotkey.
+| Lazy Loading    | Create a startup delay for a given plugin in seconds within the Manager's settings page |
+| Plugin Toggling | Quickly toggle a given plugin via the command palette and/or configure hotkey           |
 
 ** (Manual) Installation
 Until the plugin has been published to the community tab, please use the below method to install:
@@ -341,7 +341,7 @@ Defines a ~package.json~ file used for Node.js; however, this project makes litt
 {
 	"name": "obsidian-plugin-manager",
 	"version": "0.1.2",
-	"description": "Extends plugin management of Obsidian.MD.",
+	"description": "Extends plugin management of Obsidian.MD",
 	"main": "main.js",
 	"scripts": {},
 	"keywords": [],
@@ -366,7 +366,7 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 	"name": "Obsidian Plugin Manager",
 	"version": "0.1.2",
 	"minAppVersion": "0.13.14",
-	"description": "Extends plugin management of Obsidian.MD.",
+	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
@@ -382,7 +382,7 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 	"name": "Obsidian Plugin Manager",
 	"version": "0.1.2",
 	"minAppVersion": "0.13.14",
-	"description": "Extends plugin management of Obsidian.MD.",
+	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
 	"authorUrl": "https://github.com/ohm-en",
 	"isDesktopOnly": false
