@@ -16,6 +16,7 @@
 - [[#environment--compilation][Environment & Compilation]]
   - [[#compile-w-noweb][Compile w/ Noweb]]
   - [[#build-dependencies][Build Dependencies]]
+  - [[#tests][Tests]]
   - [[#manifest][Manifest]]
 - [[#credits][Credits]]
 - [[#license][LICENSE]]
@@ -63,24 +64,7 @@ A single global object will be used as our "store" throughout the program. It kn
 Our store will furthermore be cached on the system using the Obsidian API (in a file titled ~data.json~). The program has no support for lazy loading without the data from this file.
 
 #+begin_src js
-  const DEFAULT_SETTINGS = {
-    pluginArr: (function () {
-      let array = {};
-      Object.keys(app.plugins.manifests).forEach(function (pluginId) {
-        array[pluginId] = {
-          id: pluginId,
-          delay: 0,
-          enabled: pluginStatus(pluginId),
-        };
-      });
-      return array;
-    })(),
-  };
-  const pluginSettings = Object.assign(
-    {},
-    DEFAULT_SETTINGS,
-    await plugin.loadData()
-  );
+  const pluginSettings = await plugin.loadData();
 #+end_src
 
 **** The Global Listener
@@ -254,7 +238,8 @@ The settings panel is a list of every installed plugin with a few options. The f
     });
     sortedPlugins.forEach(function ([id, pluginData], index, arr) {
       if (!pluginArr[id]) {
-        pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) };
+          pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }; 
+          pluginArr[id] = new Proxy(pluginSettings.pluginArr[id], pluginListen);
       }
       const data = pluginArr[id];
       const st = new obsidian.Setting(El);
@@ -334,6 +319,7 @@ This literate document is written in org-mode and use ~org-babel-tangle~ to comp
 <<entry-point>>
 module.exports = constructor;
 #+end_src
+
 ** Build Dependencies
 Defines a ~package.json~ file used for Node.js; however, this project makes little use of its features.
 
@@ -355,6 +341,18 @@ Defines a ~package.json~ file used for Node.js; however, this project makes litt
 		"obsidian": "^0.12.17"
 	}
 }
+#+end_src
+
+** Tests
+
+#+begin_src javascript
+  const pluginArr_test = function(pluginArr) {
+      pluginArr[id].delay = 2000;
+      new
+      await plugin.saveData(pluginArr);
+      const newPluginArr = await plugin.loadData();
+      return pluginArr[id].delay == newPluginArr[id].delay ? true : false
+  }
 #+end_src
 
 ** Manifest
