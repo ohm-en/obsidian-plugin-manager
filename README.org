@@ -238,7 +238,7 @@ The settings panel is a list of every installed plugin with a few options. The f
     });
     sortedPlugins.forEach(function ([id, pluginData], index, arr) {
       if (!pluginArr[id]) {
-          pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) }; 
+          pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) };
           pluginArr[id] = new Proxy(pluginSettings.pluginArr[id], pluginListen);
       }
       const data = pluginArr[id];
@@ -326,7 +326,7 @@ Defines a ~package.json~ file used for Node.js; however, this project makes litt
 #+begin_src json :tangle ./package.json
 {
 	"name": "obsidian-plugin-manager",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "Extends plugin management of Obsidian.MD",
 	"main": "main.js",
 	"scripts": {},
@@ -362,7 +362,7 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
@@ -378,7 +378,7 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 {
 	"id": "obsidian-plugin-manager",
 	"name": "Obsidian Plugin Manager",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
