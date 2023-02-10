@@ -64,7 +64,8 @@ A single global object will be used as our "store" throughout the program. It kn
 Our store will furthermore be cached on the system using the Obsidian API (in a file titled ~data.json~). The program has no support for lazy loading without the data from this file.
 
 #+begin_src js
-  const pluginSettings = await plugin.loadData();
+  const savedData = await plugin.loadData();
+  const pluginSettings = (savedData ? savedData : {pluginArr: {}});
 #+end_src
 
 **** The Global Listener
