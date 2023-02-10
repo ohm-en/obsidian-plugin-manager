@@ -10,12 +10,8 @@ function constructor(app, manifest) {
     const pluginStatus = function (pluginId) {
       return app.plugins.plugins.hasOwnProperty(pluginId);
     };
-<<<<<<< HEAD
-    const pluginSettings = await plugin.loadData();
-=======
     const savedData = await plugin.loadData();
     const pluginSettings = (savedData ? savedData : {pluginArr: {}});
->>>>>>> cd3c150 (Fix `pluginArr` undefined;)
     const pluginListen = {
       async set(obj, prop, value) {
         const nbj = Object.assign({}, obj);
