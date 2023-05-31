@@ -1,6 +1,6 @@
 {
-	"id": "obsidian-plugin-manager",
-	"name": "Obsidian Plugin Manager",
+	"id": "plugin-manager",
+	"name": Plugin Manager",
 	"version": "0.1.4",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",

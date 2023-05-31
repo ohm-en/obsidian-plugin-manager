@@ -361,8 +361,8 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 
 #+begin_src json :tangle ./manifest.json
 {
-	"id": "obsidian-plugin-manager",
-	"name": "Obsidian Plugin Manager",
+	"id": "plugin-manager",
+	"name": "Plugin Manager",
 	"version": "0.1.4",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
@@ -377,8 +377,8 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 
 #+begin_src json :tangle ./manifest-beta.json
 {
-	"id": "obsidian-plugin-manager",
-	"name": "Obsidian Plugin Manager",
+	"id": "plugin-manager",
+	"name": Plugin Manager",
 	"version": "0.1.4",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
