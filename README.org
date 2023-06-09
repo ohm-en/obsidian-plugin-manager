@@ -326,7 +326,7 @@ Defines a ~package.json~ file used for Node.js; however, this project makes litt
 
 #+begin_src json :tangle ./package.json
 {
-	"name": "obsidian-plugin-manager",
+	"name": "plugin-manager",
 	"version": "0.1.3",
 	"description": "Extends plugin management of Obsidian.MD",
 	"main": "main.js",
