@@ -1,6 +1,6 @@
 {
 	"name": "plugin-manager",
-	"version": "0.1.3",
+	"version": "0.1.5",
 	"description": "Extends plugin management of Obsidian.MD",
 	"main": "main.js",
 	"scripts": {},
