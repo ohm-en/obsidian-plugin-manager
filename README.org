@@ -378,7 +378,7 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 #+begin_src json :tangle ./manifest-beta.json
 {
 	"id": "plugin-manager",
-	"name": Plugin Manager",
+	"name": "Plugin Manager",
 	"version": "0.1.4",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
