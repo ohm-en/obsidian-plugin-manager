@@ -217,7 +217,7 @@ However, we first need to limit plugins which don't support lazy loading. Curren
 NOTE: The user's can still edit the values manually to enable lazy loading. This is intentional.
 
 #+begin_src js
-  const blacklist = ["obsidian-plugin-manager"];
+  const blacklist = ["plugin-manager"];
 #+end_src
 
 **** Plugin List
@@ -244,8 +244,11 @@ The settings panel is a list of every installed plugin with a few options. The f
       }
       const data = pluginArr[id];
       const st = new obsidian.Setting(El);
+      const delayField = new obsidian.Setting(El);
       const manifest = app.plugins.manifests[id];
       st.setName(manifest.name);
+      st.setHeading();
+
       st.setDesc(manifest.description);
       st.addToggle(function (tg) {
         tg.setValue(pluginStatus(id));
@@ -253,24 +256,23 @@ The settings panel is a list of every installed plugin with a few options. The f
           pluginArr[id].enabled = value;
         });
       });
-      // If plugin id on the blacklist, don't allow EU to change load delay;
-      if (!blacklist.includes(id)) {
-        st.addText(function (tx) {
-          tx.inputEl.type = "number";
-          tx.setPlaceholder("Startup Delay In Seconds");
-          const delayInSeconds = (data.delay / 1000).toString();
-          tx.setValue(delayInSeconds);
-          tx.onChange(function (delay) {
-            pluginArr[id].delay = Number(delay * 1000);
-          });
-        });
-      } else {
-        st.addText(function (tx) {
-          tx.inputEl.type = "text";
-          tx.setPlaceholder("Unavailable");
-          tx.setDisabled(true);
-        });
-      }
+      delayField.setName("Delay Delay in Seconds");
+      delayField.addText(function (tx) {
+          // If plugin id on the blacklist, don't allow EU to change load delay;
+          if (!blacklist.includes(id)) {
+              tx.inputEl.type = "number";
+              tx.setPlaceholder("0");
+              const delayInSeconds = data.delay === 0 ? "" :  (data.delay / 1000).toString();
+              tx.setValue(delayInSeconds);
+              tx.onChange(function (delay) {
+              pluginArr[id].delay = Number(delay * 1000);
+              });
+          } else {
+              tx.inputEl.type = "text";
+              tx.setPlaceholder("Plugin Not Support");
+              tx.setDisabled(true);
+          }
+      });
     });
   };
 #+end_src
@@ -363,7 +365,7 @@ A manifest file containing metadata as required by a ObsidianMD plugin.
 {
 	"id": "plugin-manager",
 	"name": "Plugin Manager",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",
@@ -379,7 +381,7 @@ A "beta" manifest file for [[https://github.com/TfTHacker/obsidian42-brat][BRAT]
 {
 	"id": "plugin-manager",
 	"name": "Plugin Manager",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"minAppVersion": "0.13.14",
 	"description": "Extends plugin management of Obsidian.MD",
 	"author": "ohm-en",

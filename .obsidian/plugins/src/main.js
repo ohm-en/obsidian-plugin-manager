@@ -75,7 +75,7 @@ function constructor(app, manifest) {
       .map(function (obj) {
         plugin.addCommand(obj);
       });
-    const blacklist = ["obsidian-plugin-manager"];
+    const blacklist = ["plugin-manager"];
     const MySettingTab = new obsidian.PluginSettingTab(app, plugin);
     MySettingTab.display = async function () {
       const { containerEl: El } = MySettingTab;
@@ -96,8 +96,11 @@ function constructor(app, manifest) {
         }
         const data = pluginArr[id];
         const st = new obsidian.Setting(El);
+        const delayField = new obsidian.Setting(El);
         const manifest = app.plugins.manifests[id];
         st.setName(manifest.name);
+        st.setHeading();
+    
         st.setDesc(manifest.description);
         st.addToggle(function (tg) {
           tg.setValue(pluginStatus(id));
@@ -105,24 +108,23 @@ function constructor(app, manifest) {
             pluginArr[id].enabled = value;
           });
         });
-        // If plugin id on the blacklist, don't allow EU to change load delay;
-        if (!blacklist.includes(id)) {
-          st.addText(function (tx) {
-            tx.inputEl.type = "number";
-            tx.setPlaceholder("Startup Delay In Seconds");
-            const delayInSeconds = (data.delay / 1000).toString();
-            tx.setValue(delayInSeconds);
-            tx.onChange(function (delay) {
-              pluginArr[id].delay = Number(delay * 1000);
-            });
-          });
-        } else {
-          st.addText(function (tx) {
-            tx.inputEl.type = "text";
-            tx.setPlaceholder("Unavailable");
-            tx.setDisabled(true);
-          });
-        }
+        delayField.setName("Delay Delay in Seconds");
+        delayField.addText(function (tx) {
+            // If plugin id on the blacklist, don't allow EU to change load delay;
+            if (!blacklist.includes(id)) {
+                tx.inputEl.type = "number";
+                tx.setPlaceholder("0");
+                const delayInSeconds = data.delay === 0 ? "" :  (data.delay / 1000).toString();
+                tx.setValue(delayInSeconds);
+                tx.onChange(function (delay) {
+                pluginArr[id].delay = Number(delay * 1000);
+                });
+            } else {
+                tx.inputEl.type = "text";
+                tx.setPlaceholder("Plugin Not Support");
+                tx.setDisabled(true);
+            }
+        });
       });
     };
     plugin.addSettingTab(MySettingTab);
