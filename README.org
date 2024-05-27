@@ -244,10 +244,11 @@ The settings panel is a list of every installed plugin with a few options. The f
       }
       const data = pluginArr[id];
       const st = new obsidian.Setting(El);
-      const delayField = new obsidian.Setting(El);
       const manifest = app.plugins.manifests[id];
       st.setName(manifest.name);
       st.setHeading();
+      const div = El.createDiv()
+      const delayField = new obsidian.Setting(div);
 
       st.setDesc(manifest.description);
       st.addToggle(function (tg) {
@@ -256,7 +257,7 @@ The settings panel is a list of every installed plugin with a few options. The f
           pluginArr[id].enabled = value;
         });
       });
-      delayField.setName("Delay Delay in Seconds");
+      delayField.setName("Startup Delay (in seconds)");
       delayField.addText(function (tx) {
           // If plugin id on the blacklist, don't allow EU to change load delay;
           if (!blacklist.includes(id)) {
@@ -265,11 +266,11 @@ The settings panel is a list of every installed plugin with a few options. The f
               const delayInSeconds = data.delay === 0 ? "" :  (data.delay / 1000).toString();
               tx.setValue(delayInSeconds);
               tx.onChange(function (delay) {
-              pluginArr[id].delay = Number(delay * 1000);
+                pluginArr[id].delay = Number(delay * 1000);
               });
           } else {
               tx.inputEl.type = "text";
-              tx.setPlaceholder("Plugin Not Support");
+              tx.setPlaceholder("Plugin Not Supported");
               tx.setDisabled(true);
           }
       });
