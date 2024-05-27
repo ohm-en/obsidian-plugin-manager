@@ -201,6 +201,7 @@ Using the above function to generate the required JS object, we only need to map
 
 #+begin_src js :noweb yes
   Object.values(app.plugins.manifests)
+    .filter(({ id }) => !pluginArr[id]?.disableToggleCommand)
     .map(createToggleCommand)
     // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
     .map(function (obj) {
@@ -239,17 +240,16 @@ The settings panel is a list of every installed plugin with a few options. The f
     });
     sortedPlugins.forEach(function ([id, pluginData], index, arr) {
       if (!pluginArr[id]) {
-          pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) };
+          pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id), disableToggleCommand: false };
           pluginArr[id] = new Proxy(pluginSettings.pluginArr[id], pluginListen);
       }
       const data = pluginArr[id];
-      const st = new obsidian.Setting(El);
       const manifest = app.plugins.manifests[id];
-      st.setName(manifest.name);
-      st.setHeading();
-      const div = El.createDiv()
-      const delayField = new obsidian.Setting(div);
 
+      const div = El.createDiv()
+      const st = new obsidian.Setting(div);
+      st.setHeading();
+      st.setName(manifest.name);
       st.setDesc(manifest.description);
       st.addToggle(function (tg) {
         tg.setValue(pluginStatus(id));
@@ -257,6 +257,9 @@ The settings panel is a list of every installed plugin with a few options. The f
           pluginArr[id].enabled = value;
         });
       });
+
+
+      const delayField = new obsidian.Setting(div);
       delayField.setName("Startup Delay (in seconds)");
       delayField.addText(function (tx) {
           // If plugin id on the blacklist, don't allow EU to change load delay;
@@ -273,6 +276,15 @@ The settings panel is a list of every installed plugin with a few options. The f
               tx.setPlaceholder("Plugin Not Supported");
               tx.setDisabled(true);
           }
+      });
+
+      const disableToggleCommandField = new obsidian.Setting(div);
+      disableToggleCommandField.setName("Enable quick toggle command")
+      disableToggleCommandField.addToggle(function (tg) {
+        tg.setValue(!pluginArr[id].disableToggleCommand);
+        tg.onChange(function (value) {
+          pluginArr[id].disableToggleCommand = !value;
+        });
       });
     });
   };

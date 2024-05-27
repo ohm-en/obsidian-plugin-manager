@@ -70,6 +70,7 @@ function constructor(app, manifest) {
       return obj;
     };
     Object.values(app.plugins.manifests)
+      .filter(({ id }) => !pluginArr[id]?.disableToggleCommand)
       .map(createToggleCommand)
       // `addCommand` needs to be wrapped in a function. I suspect it's accessing local variables?
       .map(function (obj) {
@@ -91,16 +92,16 @@ function constructor(app, manifest) {
       });
       sortedPlugins.forEach(function ([id, pluginData], index, arr) {
         if (!pluginArr[id]) {
-            pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id) };
+            pluginSettings.pluginArr[id] = { id: id, delay: 0, enabled: pluginStatus(id), disableToggleCommand: false };
             pluginArr[id] = new Proxy(pluginSettings.pluginArr[id], pluginListen);
         }
         const data = pluginArr[id];
-        const st = new obsidian.Setting(El);
-        const delayField = new obsidian.Setting(El);
         const manifest = app.plugins.manifests[id];
-        st.setName(manifest.name);
-        st.setHeading();
     
+        const div = El.createDiv()
+        const st = new obsidian.Setting(div);
+        st.setHeading();
+        st.setName(manifest.name);
         st.setDesc(manifest.description);
         st.addToggle(function (tg) {
           tg.setValue(pluginStatus(id));
@@ -108,7 +109,10 @@ function constructor(app, manifest) {
             pluginArr[id].enabled = value;
           });
         });
-        delayField.setName("Delay Delay in Seconds");
+    
+    
+        const delayField = new obsidian.Setting(div);
+        delayField.setName("Startup Delay (in seconds)");
         delayField.addText(function (tx) {
             // If plugin id on the blacklist, don't allow EU to change load delay;
             if (!blacklist.includes(id)) {
@@ -117,13 +121,22 @@ function constructor(app, manifest) {
                 const delayInSeconds = data.delay === 0 ? "" :  (data.delay / 1000).toString();
                 tx.setValue(delayInSeconds);
                 tx.onChange(function (delay) {
-                pluginArr[id].delay = Number(delay * 1000);
+                  pluginArr[id].delay = Number(delay * 1000);
                 });
             } else {
                 tx.inputEl.type = "text";
-                tx.setPlaceholder("Plugin Not Support");
+                tx.setPlaceholder("Plugin Not Supported");
                 tx.setDisabled(true);
             }
+        });
+    
+        const disableToggleCommandField = new obsidian.Setting(div);
+        disableToggleCommandField.setName("Enable quick toggle command")
+        disableToggleCommandField.addToggle(function (tg) {
+          tg.setValue(!pluginArr[id].disableToggleCommand);
+          tg.onChange(function (value) {
+            pluginArr[id].disableToggleCommand = !value;
+          });
         });
       });
     };
