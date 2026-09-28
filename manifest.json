@@ -1,10 +1,10 @@
 {
-	"id": "plugin-manager",
-	"name": "Plugin Manager",
-	"version": "0.1.5",
-	"minAppVersion": "0.13.14",
-	"description": "Extends plugin management of Obsidian.MD",
-	"author": "ohm-en",
-	"authorUrl": "https://github.com/ohm-en",
-	"isDesktopOnly": false
+  "id": "plugin-manager",
+  "name": "Plugin Manager",
+  "version": "0.1.5",
+  "minAppVersion": "0.13.14",
+  "description": "A complicated way to manage your plugins for a little more control.",
+  "author": "ohm-en",
+  "authorUrl": "https://github.com/ohm-en",
+  "isDesktopOnly": false
 }
