@@ -2,24 +2,8 @@
 :ID:       565cc737-ce08-43bb-be8e-58416208951e
 :END:
 #+title: Obsidian - Plugin Manager
+#+EXPORT_FILE_NAME: README.md
 #+auto_tangle: t
-
-* Table of Contents                                                 :toc_2:
-- [[#description][Description]]
-  - [[#features][Features]]
-  - [[#manual-installation][(Manual) Installation]]
-- [[#the-program][The Program]]
-  - [[#preamble][Preamble]]
-  - [[#functions][Functions]]
-  - [[#logic][Logic]]
-  - [[#obsidian-overhead][Obsidian Overhead]]
-- [[#environment--compilation][Environment & Compilation]]
-  - [[#compile-w-noweb][Compile w/ Noweb]]
-  - [[#build-dependencies][Build Dependencies]]
-  - [[#tests][Tests]]
-  - [[#manifest][Manifest]]
-- [[#credits][Credits]]
-- [[#license][LICENSE]]
 
 * Description
 A plugin for [[https://obsidian.md/][ObsidianMD]] which provides better management for other plugins.
@@ -36,7 +20,7 @@ Until the plugin has been published to the community tab, please use the below m
 3. Move the downloaded files into the created folder.
 4. After reloading the Obsidian plugin list, you will see the plugin. Enable it.
 
-* The Program
+* The Program                                                      :noexport:
 This plugin is written in literate format. If you'd like to read the source-code, you can find it below with relevant descriptions or in the file titled ~main.js~.
 
 ** Preamble
@@ -323,7 +307,7 @@ Furthermore, code put in ~plugin.onload~ will be the entry point for our "busine
     return plugin; }
 #+end_src
 
-* Environment & Compilation
+* Environment & Compilation                                        :noexport:
 ** Compile w/ Noweb
 This literate document is written in org-mode and use ~org-babel-tangle~ to compile the relevant code blocks into files. The ~<<NAME>>~ syntax is used to achieve this.
 
